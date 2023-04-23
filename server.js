@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken")
 const cors = require('cors')
 
 require("dotenv").config()
-const {init, getUser } = require('./database.js')
+const {init,getUser,userExists } = require('./database.js')
 
 app.use(express.urlencoded({extended: false}))
 app.use(express.json())
@@ -17,9 +17,10 @@ app.use(cors({
 }))
 let currentKey = ""
 let currentPassword = ""
+let foundUser
 
 app.get('/', (req, res) =>{
-    res.redirect('/identify')
+    res.redirect('/IDENTIFY')
 
 })
 
@@ -27,11 +28,22 @@ app.post('/identify',async (req, res) =>{
 
     const username = req.body.userId
     const password = req.body.password
-    let userObj = {username:req.body.name}
+
+    if(await userExists(username)){
+
+    foundUser = await getUser(username)
+    console.log(foundUser.role)
+    
+
+    let userObj = {username:req.body.userId}
     let token = jwt.sign(userObj,process.env.ACCESS_TOKEN_SECRET)   
     currentKey = token
     currentPassword = userObj
-    res.redirect("/granted")
+    res.redirect("/granted")}
+    else{
+        console.log("wrong userID or password")
+        res.render('fail.ejs')
+    }
 })
 
 
@@ -46,7 +58,15 @@ function authenticateToken(req,res,next){
 }
 
 app.get('/granted', authenticateToken,(req, res) =>{
-    res.render('start.ejs')
+
+    if(foundUser.role == 'student' || foundUser.role == 'teacher' ){
+        console.log("success")
+        res.render('start.ejs')
+    }else if(foundUser.role == 'admin'){
+        console.log("successful")
+        res.redirect('/ADMIN')
+    }
+    
 
 })
 
@@ -54,3 +74,10 @@ app.get('/admin', (req, res) =>{
     res.render('admin.ejs')
 
 })
+
+app.get('/IDENTIFY', (req, res) =>{
+    res.render('identify.ejs')
+
+})
+
+app.listen(5000)
