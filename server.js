@@ -1,0 +1,7 @@
+const express = require('express')
+const app = express()
+const db = require('./database')
+app.set('view-engine', 'ejs')
+const bcrypt = require('bcrypt')
+const jwt = require("jsonwebtoken")
+const cors = require('cors')
